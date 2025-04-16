@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive Mobile Messaging Simulation">
+    <meta name="author" content="Your Name">
+    <title>Mobile Simulation</title>
+</head>
+<body>
+<h1>Mobile Messaging Simulation</h1>
+
+<h2>Nokia</h2>
+<button onclick="nokia.turnOn()">Turn On Nokia</button>
+<input type="text" id="nokiaMessage" placeholder="Type your message here">
+<button onclick="sendFromNokia()">Send to iPhone</button>
+<p id="nokiaStatus"></p>
+
+<hr>
+
+<h2>iPhone</h2>
+<button onclick="iPhone.turnOn()">Turn On iPhone</button>
+<button onclick="showiPhoneInbox()">View Inbox</button>
+<div id="iphoneInbox"></div>
+<p id="iphoneStatus"></p>
+
+<script>
+    class Mobile {
+        constructor(name) {
+            this.name = name;
+            this.battery = 100;
+            this.isOn = false;
+            this.draftMessage = '';
+            this.inbox = [];
+            this.sentMessages = [];
+        }
+
+        checkStatus() {
+            return this.isOn;
+        }
+
+        turnOn() {
+            if (!this.isOn) {
+                this.isOn = true;
+                this.decreaseBattery();
+                updateStatus(this.name, "Phone is now ON");
+            } else {
+                updateStatus(this.name, "Phone is already ON");
+            }
+        }
+
+        turnOff() {
+            if (this.isOn) {
+                this.isOn = false;
+                this.decreaseBattery();
+                updateStatus(this.name, "Phone is now OFF");
+            }
+        }
+
+        chargeBattery() {
+            if (this.battery < 100) {
+                this.battery++;
+            }
+        }
+
+        decreaseBattery() {
+            if (this.battery > 0) {
+                this.battery--;
+            }
+        }
+
+        composeMessage(message) {
+            if (!this.isOn) return;
+            this.draftMessage = message;
+            this.decreaseBattery();
+        }
+
+        sendMessage(receiver) {
+            if (!this.isOn || this.draftMessage.trim() === '') return;
+            receiver.receiveMessage(`${this.name}: ${this.draftMessage}`);
+            this.sentMessages.push(this.draftMessage);
+            this.draftMessage = '';
+            this.decreaseBattery();
+        }
+
+        receiveMessage(message) {
+            if (!this.isOn) return;
+            this.inbox.push(message);
+            this.decreaseBattery();
+        }
+
+        viewInbox() {
+            if (!this.isOn) return [];
+            this.decreaseBattery();
+            return this.inbox;
+        }
+    }
+
+    function updateStatus(phoneName, message) {
+        const statusId = phoneName.toLowerCase() + "Status";
+        document.getElementById(statusId).innerText = `${phoneName} - ${message}`;
+    }
+
+    const nokia = new Mobile("Nokia");
+    const iPhone = new Mobile("iPhone");
+
+    function sendFromNokia() {
+        const input = document.getElementById("nokiaMessage").value;
+        if (!nokia.checkStatus()) {
+            updateStatus("Nokia", "Phone is OFF. Please turn it on.");
+            return;
+        }
+        if (!iPhone.checkStatus()) {
+            updateStatus("Nokia", "Cannot send. iPhone is OFF.");
+            return;
+        }
+        nokia.composeMessage(input);
+        nokia.sendMessage(iPhone);
+        updateStatus("Nokia", "Message sent.");
+        document.getElementById("nokiaMessage").value = "";
+    }
+
+    function showiPhoneInbox() {
+        if (!iPhone.checkStatus()) {
+            updateStatus("iPhone", "Phone is OFF. Please turn it on.");
+            return;
+        }
+
+        const messages = iPhone.viewInbox();
+        const inboxDiv = document.getElementById("iphoneInbox");
+        inboxDiv.innerHTML = "<h3>Inbox:</h3>";
+
+        if (messages.length === 0) {
+            inboxDiv.innerHTML += "<p>No messages.</p>";
+        } else {
+            messages.forEach(msg => {
+                inboxDiv.innerHTML += `<p>${msg}</p>`;
+            });
+        }
+    }
+</script>
+</body>
+</html>
